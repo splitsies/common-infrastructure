@@ -10,8 +10,8 @@ Resources:
   UserAuthenticatedTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub UserAuthenticated-${Stage}
-      DisplayName: !Sub UserAuthenticated-${Stage}
+      TopicName: !Sub Splitsies-UserAuthenticated-${Stage}
+      DisplayName: !Sub Splitsies-UserAuthenticated-${Stage}
 
   WarmServicesFunction:
     Type: AWS::Serverless::Function
