@@ -4,7 +4,7 @@ import { IColdStartTracker } from "./cold-start-tracker";
 const coldStartTracker = container.get<IColdStartTracker>(IColdStartTracker);
 
 export const main = async (event) => {
-    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment }, event);
+    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment }, JSON.stringify(event, null, 2));
     coldStartTracker.setFlag();
     if (!coldStartTracker.coldExecutionEnvironment) { return; }
 
