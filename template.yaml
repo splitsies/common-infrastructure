@@ -73,12 +73,21 @@ Resources:
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
+              # Permissions to create and manage logs
               - Effect: Allow
                 Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
+                              
+              # Permission for the Lambda function to invoke other Lambda functions
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: arn:aws:lambda:*:*:function:*
+
+              # Allow Lambda to receive SNS messages
               - Effect: Allow
                 Action: sns:Publish
                 Resource: !Ref UserAuthenticatedTopic
