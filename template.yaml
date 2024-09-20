@@ -7,78 +7,76 @@ Parameters:
     Type: String
 
 Resources:
-  UserLoggedInFanoutTopic:
+  UserAuthenticatedTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub UserLoggedInFanout-${Stage}
-  
-  ExpenseServiceFunctionWarmingQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: !Sub SplitsiesExpenseServiceFunctionWarming-${Stage}
-      VisibilityTimeout: 60
-  
-  OcrServiceFunctionWarmingQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: !Sub SplitsiesOcrServiceFunctionWarming-${Stage}
-      VisibilityTimeout: 30
-  
-  ExpenseServiceFunctionWarmingQueueSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Protocol: sqs
-      TopicArn: !Ref UserLoggedInFanoutTopic
-      Endpoint: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
-      RawMessageDelivery: true
-  
-  OcrServiceFunctionWarmingQueueSubscription:
-    Type: AWS::SNS::Subscription
-    Properties:
-      Protocol: sqs
-      TopicArn: !Ref UserLoggedInFanoutTopic
-      Endpoint: !GetAtt OcrServiceFunctionWarmingQueue.Arn
-      RawMessageDelivery: true
-  
-  ExpenseServiceFunctionWarmingQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      Queues:
-        - !Ref ExpenseServiceFunctionWarmingQueue
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal: "*"
-            Action: sqs:SendMessage
-            Resource: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:SourceArn: !Ref UserLoggedInFanoutTopic
+      TopicName: !Sub UserAuthenticated-${Stage}
+      DisplayName: !Sub UserAuthenticated-${Stage}
 
-  OcrServiceFunctionWarmingQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
+  WarmServicesFunction:
+    Type: AWS::Serverless::Function
+    Properties: 
+      CodeUri: ./src
+      Handler: handler.main
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      MemorySize: 512
+      Timeout: 30
+      Role: !GetAtt WarmServicesLambdaExecutionRole.Arn
+      Events:
+        SNSTrigger:
+          Type: SNS
+          Properties:
+            Topic: !Ref UserAuthenticatedTopic 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      SourcesContent: true
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        Sourcemap: true
+        EntryPoints:
+        - functions/warm-services/handler.ts
+        External:
+        - node_modules
+        - aws-sdk
+        - .esbuild
+        - .github
+  
+  # IAM Role for Lambda to allow invocation by SNS
+  WarmServicesLambdaExecutionRole:
+    Type: AWS::IAM::Role
     Properties:
-      Queues:
-        - !Ref OcrServiceFunctionWarmingQueue
-      PolicyDocument:
+      AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Principal: "*"
-            Action: sqs:SendMessage
-            Resource: !GetAtt OcrServiceFunctionWarmingQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:SourceArn: !Ref UserLoggedInFanoutTopic
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaSNSInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref UserAuthenticatedTopic
 
 Outputs:
   SNSTopicArn:
-    Description: ARN of the UserLoggedInFanoutTopic
-    Value: !Ref UserLoggedInFanoutTopic
-  Queue1Arn:
-    Description: ARN of the ExpenseServiceFunctionWarmingQueue
-    Value: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
-  Queue2Arn:
-    Description: ARN of the OcrServiceFunctionWarmingQueue
-    Value: !GetAtt OcrServiceFunctionWarmingQueue.Arn
+    Description: ARN of the UserAuthenticatedTopic
+    Value: !Ref UserAuthenticatedTopic
+  LambdaFunctionArn:
+    Description: ARN of the WarmServicesFunction
+    Value: !GetAtt WarmServicesFunction.Arn
+  WarmServicesLambdaExecutionRoleArn:
+    Description: ARN of the WarmServicesLambdaExecutionRole
+    Value: !GetAtt WarmServicesLambdaExecutionRole.Arn
