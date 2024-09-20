@@ -9,13 +9,13 @@
     "lint": "tslint -p tsconfig.json",
     "build": "sam build",
     "clean": "rm -rf ./.aws-sam"
-  
   },
   "engines": {
     "node": ">=14.15.0"
   },
   "prettier": "@splitsies/formatting",
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.656.0",
     "inversify": "^6.0.1",
     "reflect-metadata": "^0.1.13",
     "esbuild": "^0.14.14"

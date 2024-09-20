@@ -5,6 +5,21 @@ Description: SAM Template for Common AWS Infrastructure
 Parameters:
   Stage:
     Type: String
+  RtRegion:
+    Type: String
+
+Globals:
+  Function:
+    Timeout: 30    
+    MemorySize: 1024
+
+    LoggingConfig:
+      LogFormat: JSON
+
+    Environment:
+      Variables:
+        Stage: !Ref Stage
+        RtRegion: !Ref RtRegion
 
 Resources:
   UserAuthenticatedTopic:
@@ -21,8 +36,6 @@ Resources:
       Runtime: nodejs18.x
       Architectures:
       - x86_64
-      MemorySize: 512
-      Timeout: 30
       Role: !GetAtt WarmServicesLambdaExecutionRole.Arn
       Events:
         SNSTrigger:
