@@ -1,122 +1,84 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  expense-service-database
-
-  SAM Template for expense-service database
+Description: SAM Template for Common AWS Infrastructure
 
 Parameters:
-  RtEnv:
+  Stage:
     Type: String
 
-Resources:  
-  ExpensePayer:
-    Type: AWS::DynamoDB::Table
-    Properties: 
-      TableName: !Sub Splitsies-ExpensePayer-${RtEnv}
-      AttributeDefinitions: 
-        - AttributeName: expenseId
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema: 
-        - AttributeName: expenseId
-          KeyType: HASH
-        - AttributeName: userId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-  ExpensePayerStatus:
-    Type: AWS::DynamoDB::Table
-    Properties: 
-      TableName: !Sub Splitsies-ExpensePayerStatus-${RtEnv}
-      AttributeDefinitions: 
-        - AttributeName: expenseId
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema: 
-        - AttributeName: expenseId
-          KeyType: HASH
-        - AttributeName: userId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-
-  SplitsiesLeadingExpenseTable:
-    Type: AWS::DynamoDB::Table
+Resources:
+  UserLoggedInFanoutTopic:
+    Type: AWS::SNS::Topic
     Properties:
-      TableName: !Sub Splitsies-LeadingExpense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: transactionDateExpenseId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: transactionDateExpenseId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-
-  SplitsiesExpenseTable:
-    Type: AWS::DynamoDB::Table
+      TopicName: !Sub UserLoggedInFanout-${Stage}
+  
+  ExpenseServiceFunctionWarmingQueue:
+    Type: AWS::SQS::Queue
     Properties:
-      TableName: !Sub Splitsies-Expense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-
-  SplitsiesExpenseGroupTable:
-    Type: AWS::DynamoDB::Table
+      QueueName: !Sub SplitsiesExpenseServiceFunctionWarming-${Stage}
+      VisibilityTimeout: 60
+  
+  OcrServiceFunctionWarmingQueue:
+    Type: AWS::SQS::Queue
     Properties:
-      TableName: !Sub Splitsies-ExpenseGroup-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: parentExpenseId
-          AttributeType: S
-        - AttributeName: childExpenseId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: parentExpenseId
-          KeyType: HASH
-        - AttributeName: childExpenseId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-      GlobalSecondaryIndexes:
-        - IndexName: ChildExpenseIdIndex
-          KeySchema:
-            - AttributeName: childExpenseId
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
-
-  SplitsiesUserExpenseTable:
-    Type: AWS::DynamoDB::Table
+      QueueName: !Sub SplitsiesOcrServiceFunctionWarming-${Stage}
+      VisibilityTimeout: 30
+  
+  ExpenseServiceFunctionWarmingQueueSubscription:
+    Type: AWS::SNS::Subscription
     Properties:
-      TableName: !Sub Splitsies-UserExpense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: expenseId
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: expenseId
-          KeyType: HASH
-        - AttributeName: userId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-      GlobalSecondaryIndexes:
-        - IndexName: UserIdIndex
-          KeySchema:
-            - AttributeName: userId
-              KeyType: HASH
-            - AttributeName: expenseId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+      Protocol: sqs
+      TopicArn: !Ref UserLoggedInFanoutTopic
+      Endpoint: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
+      RawMessageDelivery: true
+  
+  OcrServiceFunctionWarmingQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: sqs
+      TopicArn: !Ref UserLoggedInFanoutTopic
+      Endpoint: !GetAtt OcrServiceFunctionWarmingQueue.Arn
+      RawMessageDelivery: true
+  
+  ExpenseServiceFunctionWarmingQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref ExpenseServiceFunctionWarmingQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: sqs:SendMessage
+            Resource: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref UserLoggedInFanoutTopic
+
+  OcrServiceFunctionWarmingQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref OcrServiceFunctionWarmingQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: sqs:SendMessage
+            Resource: !GetAtt OcrServiceFunctionWarmingQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref UserLoggedInFanoutTopic
+
+Outputs:
+  SNSTopicArn:
+    Description: ARN of the UserLoggedInFanoutTopic
+    Value: !Ref UserLoggedInFanoutTopic
+  Queue1Arn:
+    Description: ARN of the ExpenseServiceFunctionWarmingQueue
+    Value: !GetAtt ExpenseServiceFunctionWarmingQueue.Arn
+  Queue2Arn:
+    Description: ARN of the OcrServiceFunctionWarmingQueue
+    Value: !GetAtt OcrServiceFunctionWarmingQueue.Arn
