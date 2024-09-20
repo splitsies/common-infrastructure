@@ -1,0 +1,18 @@
+# package directories
+node_modules
+jspm_packages
+
+# Serverless directories
+.serverless
+
+# esbuild directories
+.esbuild
+
+# local-db
+**/local-db/docker/**
+
+.DS_Store
+
+**/startup-dev-pr.sh
+
+**/.aws-sam
