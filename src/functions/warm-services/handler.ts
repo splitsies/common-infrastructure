@@ -5,52 +5,21 @@ import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 
 const coldStartTracker = container.get<IColdStartTracker>(IColdStartTracker);
 const mockRequest = {
-    event: {
-        body: null,
-        headers: {
-            Accept: '*/*',
-            Host: 'localhost:12948',
-            'Content-Type': "application/json",
-            'User-Agent': 'curl/8.7.1',
-            'X-Forwarded-Port': '12948',
-            'X-Forwarded-Proto': 'http'
-        },
-        httpMethod: 'GET',
-        isBase64Encoded: false,
-        multiValueHeaders: {
-            Accept: [Array],
-            Host: [Array],
-            'User-Agent': [Array],
-            'X-Forwarded-Port': [Array],
-            'X-Forwarded-Proto': [Array]
-        },
-        multiValueQueryStringParameters: null,
-        path: '/test',
-        pathParameters: null,
-        queryStringParameters: null,
-        requestContext: {
-            accountId: '123456789012',
-            apiId: '1234567890',
-            domainName: 'localhost:12948',
-            extendedRequestId: null,
-            httpMethod: 'GET',
-            identity: [Object],
-            path: '/test',
-            protocol: 'HTTP/1.1',
-            requestId: '604a2c3c-8170-4290-865c-c86d2826ad6c',
-            requestTime: '20/Sep/2024:21:49:46 +0000',
-            requestTimeEpoch: 1726868986,
-            resourceId: '123456',
-            resourcePath: '/test',
-            stage: 'Stage'
-        },
-        resource: '/test',
-        stageVariables: null
-    }
+    body: JSON.stringify({}),
+    headers: {
+        Accept: '*/*',
+        Host: 'localhost:12948',
+        'Content-Type': "application/json",
+        'User-Agent': 'curl/8.7.1',
+        'X-Forwarded-Port': '12948',
+        'X-Forwarded-Proto': 'http'
+    },
+    httpMethod: 'GET',
+    isBase64Encoded: false
 };
 
 export const main = async (event) => {
-    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment });
+    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion });
     console.log({ event });
     coldStartTracker.setFlag();
 
@@ -63,20 +32,22 @@ export const main = async (event) => {
     }));
 
     console.log({
+        FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
         resultCode: result.$metadata.httpStatusCode,
         payload: result.Payload ? JSON.parse(Buffer.from(result.Payload).toString()) : undefined,
     });
     
 
 
-    const east1Client = new LambdaClient({ region: process.env.RtRegion });
+    const east1Client = new LambdaClient({ region: process.env.RtRegion || "us-east-1" });
     const processResult = await east1Client.send(new InvokeCommand({
-        FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
+        FunctionName: "ocr-service-dev-pr-process",
         InvocationType: 'RequestResponse',
         Payload: JSON.stringify({ ...mockRequest, body: { ping: true } }),
     }));
 
     console.log({
+        FunctionName: "ocr-service-dev-pr-process",
         resultCode: processResult.$metadata.httpStatusCode,
         payload: processResult.Payload ? JSON.parse(Buffer.from(processResult.Payload).toString()) : undefined,
     });
@@ -88,6 +59,7 @@ export const main = async (event) => {
     }));
     
     console.log({
+        FunctionName: "expense-service-dev-pr-getForUser",
         resultCode: getForUserResult.$metadata.httpStatusCode,
         payload: getForUserResult.Payload ? JSON.parse(Buffer.from(getForUserResult.Payload).toString()) : undefined,
     });
