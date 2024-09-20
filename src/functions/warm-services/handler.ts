@@ -18,7 +18,36 @@ export const main = async (event) => {
         Payload: JSON.stringify(event),
     }));
 
-    console.log({ result });
+    console.log({
+        resultCode: result.$metadata.httpStatusCode,
+        payload: result.Payload ? JSON.parse(Buffer.from(result.Payload).toString()) : undefined,
+    });
+    
+
+
+    const east1Client = new LambdaClient({ region: process.env.RtRegion });
+    const processResult = await east1Client.send(new InvokeCommand({
+        FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify({ ping: true }),
+    }));
+
+    console.log({
+        resultCode: processResult.$metadata.httpStatusCode,
+        payload: processResult.Payload ? JSON.parse(Buffer.from(processResult.Payload).toString()) : undefined,
+    });
+
+    const getForUserResult = await east1Client.send(new InvokeCommand({
+        FunctionName: "expense-service-dev-pr-getForUser",
+        InvocationType: 'RequestResponse',
+        Payload: JSON.stringify({ ping: true }),
+    }));
+    
+    console.log({
+        resultCode: getForUserResult.$metadata.httpStatusCode,
+        payload: getForUserResult.Payload ? JSON.parse(Buffer.from(getForUserResult.Payload).toString()) : undefined,
+    });
+
 
     if (!coldStartTracker.coldExecutionEnvironment) { return; }
     // Send ping events to the configured endpoints with auth header
