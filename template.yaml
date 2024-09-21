@@ -20,7 +20,7 @@ Globals:
         RtRegion: !Sub ${AWS::Region}
 
 Resources:
-  UserAuthenticatedTopic:
+  UserConnectedTopic:
     Type: AWS::SNS::Topic
     Properties:
       TopicName: !Sub Splitsies-UserAuthenticated-${Stage}
@@ -55,7 +55,7 @@ Resources:
         SNSTrigger:
           Type: SNS
           Properties:
-            Topic: !Ref UserAuthenticatedTopic 
+            Topic: !Ref UserConnectedTopic 
     Metadata: # Manage esbuild properties
       BuildMethod: esbuild
       SourcesContent: true
@@ -103,7 +103,7 @@ Resources:
               # Allow Lambda to receive SNS messages
               - Effect: Allow
                 Action: sns:Publish
-                Resource: !Ref UserAuthenticatedTopic
+                Resource: !Ref UserConnectedTopic
 
               # Permission for Lambda to read from DynamoDB table
               - Effect: Allow
@@ -116,8 +116,8 @@ Resources:
 
 Outputs:
   SNSTopicArn:
-    Description: ARN of the UserAuthenticatedTopic
-    Value: !Ref UserAuthenticatedTopic
+    Description: ARN of the UserConnectedTopic
+    Value: !Ref UserConnectedTopic
   LambdaFunctionArn:
     Description: ARN of the WarmServicesFunction
     Value: !GetAtt WarmServicesFunction.Arn
