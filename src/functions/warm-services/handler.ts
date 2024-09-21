@@ -19,7 +19,7 @@ export const main = async (_: SNSEvent) => {
         for (const region of regions) {
             invocations.push(new Promise<InvokeCommandOutput>(async res => {
                 const result = await lambdaWarmer.warm(functionName, region);
-                console.log({ functionName, resultCode: result?.$metadata.httpStatusCode });
+                console.info({ functionName, resultCode: result?.$metadata.httpStatusCode });
                 res(result);
             }));
         }
