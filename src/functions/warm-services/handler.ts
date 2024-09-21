@@ -8,13 +8,13 @@ const coldStartTracker = new ColdStartTracker();
 const lambdaWarmer = new LambdaWarmer();
 
 export const main = async (_: SNSEvent) => {
-    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion });
+    if (!coldStartTracker.coldExecutionEnvironment) { return; }
     coldStartTracker.setFlag();
 
     // Hit health checks to ensure warm lambda execution environments
     const invocations: Promise<InvokeCommandOutput>[] = [];
 
-    for (const functionName of Object.keys(functionConfiguration.functions)) {
+    for (const functionName of Object.keys(functionConfiguration.functions[process.env.RtRegion])) {
         const regions: string[] = functionConfiguration.functions[functionName];
         for (const region of regions) {
             invocations.push(new Promise<InvokeCommandOutput>(async res => {
@@ -26,5 +26,4 @@ export const main = async (_: SNSEvent) => {
     }
 
     await Promise.all(invocations);
-    if (!coldStartTracker.coldExecutionEnvironment) { return; }
 }
