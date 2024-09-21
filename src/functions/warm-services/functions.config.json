@@ -1,9 +1,12 @@
 {
     "functions": {
         "dev-pr": {
-            "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU": ["us-west-1"],
-            "ocr-service-dev-pr-process": ["us-east-1"],
-            "expense-service-dev-pr-getForUser": ["us-east-1"]
+            "us-east-1": [
+                "ocr-service-dev-pr-process",
+                "expense-service-dev-pr-getForUser",
+                "expense-service-dev-pr-connect",
+                "expense-service-dev-pr-create"                
+            ]
         }
     }
 }

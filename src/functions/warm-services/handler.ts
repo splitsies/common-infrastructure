@@ -14,12 +14,12 @@ export const main = async (_: SNSEvent) => {
     // Hit health checks to ensure warm lambda execution environments
     const invocations: Promise<InvokeCommandOutput>[] = [];
 
-    for (const functionName of Object.keys(functionConfiguration.functions[process.env.Stage])) {
-        const regions: string[] = functionConfiguration.functions[process.env.Stage][functionName];
-        for (const region of regions) {
+    for (const region of Object.keys(functionConfiguration.functions[process.env.Stage])) {
+        const functionNames: string[] = functionConfiguration.functions[process.env.Stage][process.env.RtRegion];
+        for (const functionName of functionNames) {
             invocations.push(new Promise<InvokeCommandOutput>(async res => {
                 const result = await lambdaWarmer.warm(functionName, region);
-                console.info({ functionName, resultCode: result?.$metadata.httpStatusCode });
+                console.info({ functionName: functionName, resultCode: result?.$metadata.httpStatusCode });
                 res(result);
             }));
         }
