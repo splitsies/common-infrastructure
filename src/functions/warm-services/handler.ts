@@ -9,21 +9,30 @@ const lambdaWarmer = new LambdaWarmer();
 const dao = new FunctionInfoDao();
 
 export const main = async (event: SNSEvent) => {
-    if (!coldStartTracker.isColdStart(process.env.RtRegion)) { return; }
-    console.log({ coldStart: coldStartTracker.isColdStart, event, region: process.env.RtRegion });
-    coldStartTracker.setFlag(process.env.RtRegion);
+    const regions = new Set<string>(event.Records.map(r => {
+        try {
+            return JSON.parse(r.Sns.Message).data || process.env.RtRegion
+        } catch {
+            return process.env.RtRegion;
+        }
+    }));
 
-    // Hit health checks to ensure warm lambda execution environments
     const invocations: Promise<InvokeCommandOutput>[] = [];
-    const functionInfos = await dao.listFunctions(process.env.RtRegion);
+    for (const messageRegion of regions) {
+        if (!coldStartTracker.isColdStart(messageRegion)) { continue; }
+        coldStartTracker.setFlag(messageRegion);
 
-    for (const { functionName, region } of functionInfos) {
-        invocations.push(new Promise<InvokeCommandOutput>(async res => {
-            const result = await lambdaWarmer.warm(functionName, region);
-            console.info({ functionName: functionName, resultCode: result?.$metadata.httpStatusCode });
-            res(result);
-        }));        
+        // Hit health checks to ensure warm lambda execution environments
+        const functionInfos = await dao.listFunctions(messageRegion);
+
+        for (const { functionName, region } of functionInfos) {
+            invocations.push(new Promise<InvokeCommandOutput>(async res => {
+                const result = await lambdaWarmer.warm(functionName, region);
+                console.info({ functionName: functionName, resultCode: result?.$metadata.httpStatusCode });
+                res(result);
+            }));
+        }
     }
-
+    
     await Promise.all(invocations);
 }
