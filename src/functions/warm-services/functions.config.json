@@ -5,7 +5,12 @@
                 "ocr-service-dev-pr-process",
                 "expense-service-dev-pr-getForUser",
                 "expense-service-dev-pr-connect",
-                "expense-service-dev-pr-create"                
+                "expense-service-dev-pr-create",
+                "expense-service-dev-pr-addJoinRequest",
+                "expense-service-dev-pr-addUserToExpense",
+                "expense-service-dev-pr-message",
+                "expense-service-dev-pr-getExpense",
+                "expense-service-dev-pr-addNewExpenseToGroup"
             ]
         }
     }
