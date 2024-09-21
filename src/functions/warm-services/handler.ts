@@ -1,33 +1,11 @@
 import { container } from "./inversify.config";
 import { IColdStartTracker } from "./cold-start-tracker";
-import { InvokeCommand, InvokeCommandOutput, LambdaClient } from "@aws-sdk/client-lambda";
-import regionConfiguration from "./regions.config.json";
+import { InvokeCommandOutput } from "@aws-sdk/client-lambda";
+import { ILambdaWarmer } from "./lambda-warmer";
 import functionConfiguration from "./functions.config.json";
 
 const coldStartTracker = container.get<IColdStartTracker>(IColdStartTracker);
-const regions = new Map<string, LambdaClient>();
-
-for (const region of regionConfiguration.regions) {
-    regions.set(region, new LambdaClient({ region }));
-}
-
-const warm = (functionName: string, region: string): Promise<InvokeCommandOutput> => {
-    if (!regions.has(region)) {
-        console.error(`Region ${region} was not defined in configuration`);
-    }
-
-    const command = new InvokeCommand({
-        FunctionName: functionName,
-        InvocationType: 'Event',
-        Payload: JSON.stringify({
-            body: JSON.stringify({}),
-            headers: { 'X-Sp-Health-Check': 'true' },
-            isBase64Encoded: false
-        })
-    });
-
-    return regions.get(region).send(command);
-};
+const lambdaWarmer = container.get<ILambdaWarmer>(ILambdaWarmer);
 
 export const main = async (event) => {
     console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion, event });
@@ -39,14 +17,8 @@ export const main = async (event) => {
         const regions: string[] = functionConfiguration.functions[functionName];
         for (const region of regions) {
             invocations.push(new Promise<InvokeCommandOutput>(async res => {
-                const result = await warm(functionName, region);
-
-                console.log({
-                    functionName,
-                    resultCode: result.$metadata.httpStatusCode,
-                    // payload: result.Payload ? JSON.parse(Buffer.from(result.Payload).toString()) : undefined,
-                });
-
+                const result = await lambdaWarmer.warm(functionName, region);
+                console.debug({ functionName, resultCode: result?.$metadata.httpStatusCode });
                 res(result);
             }));
         }
