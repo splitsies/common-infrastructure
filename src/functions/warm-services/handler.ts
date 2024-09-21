@@ -8,6 +8,7 @@ const coldStartTracker = new ColdStartTracker();
 const lambdaWarmer = new LambdaWarmer();
 
 export const main = async (_: SNSEvent) => {
+    console.log({region: process.env.RtRegion, functions: functionConfiguration.functions[process.env.RtRegion]})
     if (!coldStartTracker.coldExecutionEnvironment) { return; }
     coldStartTracker.setFlag();
 
