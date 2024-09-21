@@ -1,5 +1,5 @@
 import { InvokeCommand, InvokeCommandOutput, LambdaClient } from "@aws-sdk/client-lambda";
-import regionConfiguration from "./regions.config.json";
+import regionConfiguration from "../configuration/regions.config.json";
 
 export class LambdaWarmer {
     private readonly _regions = new Map<string, LambdaClient>();

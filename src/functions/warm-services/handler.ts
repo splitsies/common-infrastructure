@@ -1,7 +1,7 @@
-import { ColdStartTracker } from "./cold-start-tracker";
+import { ColdStartTracker } from "./utils/cold-start-tracker";
 import { InvokeCommandOutput } from "@aws-sdk/client-lambda";
 import { SNSEvent } from "aws-lambda";
-import { LambdaWarmer } from "./lambda-warmer";
+import { LambdaWarmer } from "./utils/lambda-warmer";
 import { FunctionInfoDao } from "./dao/function-info-dao";
 
 const coldStartTracker = new ColdStartTracker();
@@ -9,9 +9,9 @@ const lambdaWarmer = new LambdaWarmer();
 const dao = new FunctionInfoDao();
 
 export const main = async (event: SNSEvent) => {
-    // if (!coldStartTracker.coldExecutionEnvironment) { return; }
-    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, event, region: process.env.RtRegion });
-    coldStartTracker.setFlag();
+    if (!coldStartTracker.isColdStart(process.env.RtRegion)) { return; }
+    console.log({ coldStart: coldStartTracker.isColdStart, event, region: process.env.RtRegion });
+    coldStartTracker.setFlag(process.env.RtRegion);
 
     // Hit health checks to ensure warm lambda execution environments
     const invocations: Promise<InvokeCommandOutput>[] = [];
