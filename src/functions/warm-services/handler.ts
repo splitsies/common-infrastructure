@@ -24,14 +24,11 @@ export const main = async (event: SNSEvent) => {
 
         // Hit health checks to ensure warm lambda execution environments
         const functionInfos = await dao.listFunctions(messageRegion);
-
-        for (const { functionName, region } of functionInfos) {
-            invocations.push(new Promise<InvokeCommandOutput>(async res => {
-                const result = await lambdaWarmer.warm(functionName, region);
-                console.info({ region, functionName, resultCode: result?.$metadata.httpStatusCode });
-                res(result);
-            }));
-        }
+        invocations.push(...functionInfos.map(async ({ functionName, region }) => {
+            const result = await lambdaWarmer.warm(functionName, region);
+            console.info({ region, functionName, resultCode: result?.$metadata.httpStatusCode });
+            return result;
+        }));
     }
 
     await Promise.all(invocations);
