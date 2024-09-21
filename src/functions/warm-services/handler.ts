@@ -2,25 +2,15 @@ import { container } from "./inversify.config";
 import { IColdStartTracker } from "./cold-start-tracker";
 import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
 
-
 const coldStartTracker = container.get<IColdStartTracker>(IColdStartTracker);
-const mockRequest = {
-    body: JSON.stringify({}),
-    headers: {
-        Accept: '*/*',
-        Host: 'localhost:12948',
-        'Content-Type': "application/json",
-        'User-Agent': 'curl/8.7.1',
-        'X-Forwarded-Port': '12948',
-        'X-Forwarded-Proto': 'http'
-    },
-    httpMethod: 'GET',
+const mockRequest = (body = {}) => JSON.stringify({
+    body: JSON.stringify(body),
+    headers: { 'X-Sp-Health-Check': 'true' },
     isBase64Encoded: false
-};
+});
 
 export const main = async (event) => {
-    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion });
-    console.log({ event });
+    console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion, event });
     coldStartTracker.setFlag();
 
     const client = new LambdaClient({ region: "us-west-1" });
@@ -28,7 +18,7 @@ export const main = async (event) => {
     const result = await client.send(new InvokeCommand({
         FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
         InvocationType: 'RequestResponse',
-        Payload: JSON.stringify(mockRequest),
+        Payload: mockRequest(),
     }));
 
     console.log({
@@ -43,7 +33,7 @@ export const main = async (event) => {
     const processResult = await east1Client.send(new InvokeCommand({
         FunctionName: "ocr-service-dev-pr-process",
         InvocationType: 'RequestResponse',
-        Payload: JSON.stringify({ ...mockRequest, body: { ping: true } }),
+        Payload: mockRequest()
     }));
 
     console.log({
@@ -55,7 +45,7 @@ export const main = async (event) => {
     const getForUserResult = await east1Client.send(new InvokeCommand({
         FunctionName: "expense-service-dev-pr-getForUser",
         InvocationType: 'RequestResponse',
-        Payload: JSON.stringify({ ...mockRequest, body: { ping: true } }),
+        Payload: mockRequest()
     }));
     
     console.log({
