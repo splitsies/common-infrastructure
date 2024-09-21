@@ -108,7 +108,7 @@ Resources:
                 Action: sns:Publish
                 Resource: !Ref UserAuthenticatedTopic
 
-              # Permission for Lambda to read/write from DynamoDB table
+              # Permission for Lambda to read from DynamoDB table
               - Effect: Allow
                 Action:
                   - dynamodb:GetItem
