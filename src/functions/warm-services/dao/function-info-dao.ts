@@ -17,7 +17,7 @@ export class FunctionInfoDao {
         const queryInput: QueryCommandInput = {
             TableName: `Splitsies-WarmFunctionsIndex-${process.env.Stage}`,
             KeyConditionExpression: "#region = :region",
-            ExpressionAttributeNames: { "#region": ":region" },
+            ExpressionAttributeNames: { "#region": "region" },
             ExpressionAttributeValues: { ":region": { S: region } },
         };
 
