@@ -4,13 +4,18 @@
             "us-east-1": [
                 "ocr-service-dev-pr-process",
                 "expense-service-dev-pr-getForUser",
+                "expense-service-dev-pr-createConnectionToken",
                 "expense-service-dev-pr-connect",
                 "expense-service-dev-pr-create",
                 "expense-service-dev-pr-addJoinRequest",
                 "expense-service-dev-pr-addUserToExpense",
                 "expense-service-dev-pr-message",
                 "expense-service-dev-pr-getExpense",
-                "expense-service-dev-pr-addNewExpenseToGroup"
+                "expense-service-dev-pr-addNewExpenseToGroup",
+                "expense-service-dev-pr-addUserToExpense",
+                "expense-service-dev-pr-setExpensePayerStatus",
+                "expense-service-dev-pr-getJoinRequestsForExpense",
+                "expense-service-dev-pr-getJoinRequests"
             ]
         }
     }
