@@ -33,5 +33,5 @@ jobs:
         sam deploy --stack-name  common-infrastructure-dev-pr \
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
-        --parameter-overrides "Stage=dev-pr" "RtRegion=us-east-1"
+        --parameter-overrides "Stage=dev-pr"
 

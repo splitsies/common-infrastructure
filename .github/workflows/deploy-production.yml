@@ -31,5 +31,5 @@ jobs:
         sam deploy --stack-name  common-infrastructure-production \
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
-        --parameter-overrides "Stage=production" "RtRegion=us-east-1"
+        --parameter-overrides "Stage=production"
 
