@@ -1,14 +1,4 @@
-import { injectable } from "inversify";
-
-
-export const IColdStartTracker = Symbol.for("IColdStartTracker");
-export interface IColdStartTracker {
-    readonly coldExecutionEnvironment: boolean;
-    setFlag(): void;
-}
-
-@injectable()
-export class ColdStartTracker implements IColdStartTracker {
+export class ColdStartTracker {
 
     private _coldExecutionEnvironment: boolean = true;
 

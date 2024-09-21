@@ -1,14 +1,7 @@
 import { InvokeCommand, InvokeCommandOutput, LambdaClient } from "@aws-sdk/client-lambda";
-import { injectable } from "inversify";
 import regionConfiguration from "./regions.config.json";
 
-export const ILambdaWarmer = Symbol.for("ILambdaWarmer");
-export interface ILambdaWarmer {
-    warm(functionName: string, region: string): Promise<InvokeCommandOutput>;
-}
-
-@injectable()
-export class LambdaWarmer implements ILambdaWarmer {
+export class LambdaWarmer {
     private readonly _regions = new Map<string, LambdaClient>();
 
     constructor() {
