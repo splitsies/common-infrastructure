@@ -23,8 +23,8 @@ Resources:
   UserConnectedTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub Splitsies-UserAuthenticated-${Stage}
-      DisplayName: !Sub Splitsies-UserAuthenticated-${Stage}
+      TopicName: !Sub Splitsies-UserConnected-${Stage}
+      DisplayName: !Sub Splitsies-UserConnected-${Stage}
 
   WarmFunctionsIndex:
     Type: AWS::DynamoDB::Table
