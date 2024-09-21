@@ -5,8 +5,8 @@ Description: SAM Template for Common AWS Infrastructure
 Parameters:
   Stage:
     Type: String
-  RtRegion:
-    Type: String
+  # RtRegion:
+  #   Type: String
 
 Globals:
   Function:
@@ -19,7 +19,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref Stage
-        RtRegion: !Ref RtRegion
+        RtRegion: !Sub ${AWS::Region}
 
 Resources:
   UserAuthenticatedTopic:
@@ -27,6 +27,22 @@ Resources:
     Properties:
       TopicName: !Sub Splitsies-UserAuthenticated-${Stage}
       DisplayName: !Sub Splitsies-UserAuthenticated-${Stage}
+
+  WarmFunctionsIndex:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: !Sub Splitsies-WarmFunctionsIndex-${Stage}
+      AttributeDefinitions: 
+        - AttributeName: region
+          AttributeType: S
+        - AttributeName: functionName
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: region
+          KeyType: HASH
+        - AttributeName: functionName
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
 
   WarmServicesFunction:
     Type: AWS::Serverless::Function
@@ -92,6 +108,19 @@ Resources:
                 Action: sns:Publish
                 Resource: !Ref UserAuthenticatedTopic
 
+              # Permission for Lambda to read/write from DynamoDB table
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt WarmFunctionsIndex.Arn
+
 Outputs:
   SNSTopicArn:
     Description: ARN of the UserAuthenticatedTopic
@@ -102,3 +131,6 @@ Outputs:
   WarmServicesLambdaExecutionRoleArn:
     Description: ARN of the WarmServicesLambdaExecutionRole
     Value: !GetAtt WarmServicesLambdaExecutionRole.Arn
+  WarmFunctionsIndexArn:
+    Description: ARN of the WarmFunctionsIndex
+    Value: !GetAtt WarmFunctionsIndex.Arn
