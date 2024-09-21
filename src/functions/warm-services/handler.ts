@@ -15,7 +15,7 @@ export const main = async (_: SNSEvent) => {
     const invocations: Promise<InvokeCommandOutput>[] = [];
 
     for (const functionName of Object.keys(functionConfiguration.functions[process.env.RtRegion])) {
-        const regions: string[] = functionConfiguration.functions[functionName];
+        const regions: string[] = functionConfiguration.functions[process.env.RtRegion][functionName];
         for (const region of regions) {
             invocations.push(new Promise<InvokeCommandOutput>(async res => {
                 const result = await lambdaWarmer.warm(functionName, region);
