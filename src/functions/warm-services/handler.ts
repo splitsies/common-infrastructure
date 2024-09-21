@@ -1,59 +1,58 @@
 import { container } from "./inversify.config";
 import { IColdStartTracker } from "./cold-start-tracker";
-import { InvokeCommand, LambdaClient } from "@aws-sdk/client-lambda";
+import { InvokeCommand, InvokeCommandOutput, LambdaClient } from "@aws-sdk/client-lambda";
+import regionConfiguration from "./regions.config.json";
+import functionConfiguration from "./functions.config.json";
 
 const coldStartTracker = container.get<IColdStartTracker>(IColdStartTracker);
-const mockRequest = (body = {}) => JSON.stringify({
-    body: JSON.stringify(body),
-    headers: { 'X-Sp-Health-Check': 'true' },
-    isBase64Encoded: false
-});
+const regions = new Map<string, LambdaClient>();
+
+for (const region of regionConfiguration.regions) {
+    regions.set(region, new LambdaClient({ region }));
+}
+
+const warm = (functionName: string, region: string): Promise<InvokeCommandOutput> => {
+    if (!regions.has(region)) {
+        console.error(`Region ${region} was not defined in configuration`);
+    }
+
+    const command = new InvokeCommand({
+        FunctionName: functionName,
+        InvocationType: 'Event',
+        Payload: JSON.stringify({
+            body: JSON.stringify({}),
+            headers: { 'X-Sp-Health-Check': 'true' },
+            isBase64Encoded: false
+        })
+    });
+
+    return regions.get(region).send(command);
+};
 
 export const main = async (event) => {
     console.log({ coldStart: coldStartTracker.coldExecutionEnvironment, region: process.env.RtRegion, event });
     coldStartTracker.setFlag();
 
-    const client = new LambdaClient({ region: "us-west-1" });
+    const invocations: Promise<InvokeCommandOutput>[] = [];
 
-    const result = await client.send(new InvokeCommand({
-        FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
-        InvocationType: 'RequestResponse',
-        Payload: mockRequest(),
-    }));
+    for (const functionName of Object.keys(functionConfiguration.functions)) {
+        const regions: string[] = functionConfiguration.functions[functionName];
+        for (const region of regions) {
+            invocations.push(new Promise<InvokeCommandOutput>(async res => {
+                const result = await warm(functionName, region);
 
-    console.log({
-        FunctionName: "ocr-service-dev-pr-TestTimeFunction-OVptx72kGdvU",
-        resultCode: result.$metadata.httpStatusCode,
-        payload: result.Payload ? JSON.parse(Buffer.from(result.Payload).toString()) : undefined,
-    });
-    
+                console.log({
+                    functionName,
+                    resultCode: result.$metadata.httpStatusCode,
+                    // payload: result.Payload ? JSON.parse(Buffer.from(result.Payload).toString()) : undefined,
+                });
 
+                res(result);
+            }));
+        }
+    }
 
-    const east1Client = new LambdaClient({ region: process.env.RtRegion || "us-east-1" });
-    const processResult = await east1Client.send(new InvokeCommand({
-        FunctionName: "ocr-service-dev-pr-process",
-        InvocationType: 'RequestResponse',
-        Payload: mockRequest()
-    }));
-
-    console.log({
-        FunctionName: "ocr-service-dev-pr-process",
-        resultCode: processResult.$metadata.httpStatusCode,
-        payload: processResult.Payload ? JSON.parse(Buffer.from(processResult.Payload).toString()) : undefined,
-    });
-
-    const getForUserResult = await east1Client.send(new InvokeCommand({
-        FunctionName: "expense-service-dev-pr-getForUser",
-        InvocationType: 'RequestResponse',
-        Payload: mockRequest()
-    }));
-    
-    console.log({
-        FunctionName: "expense-service-dev-pr-getForUser",
-        resultCode: getForUserResult.$metadata.httpStatusCode,
-        payload: getForUserResult.Payload ? JSON.parse(Buffer.from(getForUserResult.Payload).toString()) : undefined,
-    });
-
+    await Promise.all(invocations);
 
     if (!coldStartTracker.coldExecutionEnvironment) { return; }
     // Send ping events to the configured endpoints with auth header
