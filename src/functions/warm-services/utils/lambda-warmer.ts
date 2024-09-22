@@ -18,7 +18,7 @@ export class LambdaWarmer {
     
         const command = new InvokeCommand({
             FunctionName: functionName,
-            InvocationType: 'Event',
+            InvocationType: 'RequestResponse',
             Payload: JSON.stringify({
                 body: JSON.stringify({}),
                 headers: { 'X-Sp-Health-Check': 'true' },
