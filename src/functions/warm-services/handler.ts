@@ -24,12 +24,17 @@ export const main = async (event: SNSEvent) => {
 
         // Hit health checks to ensure warm lambda execution environments
         const functionInfos = await dao.listFunctions(messageRegion);
-        invocations.push(...functionInfos.map(async ({ functionName, region }) => {
-            const start = Date.now();
-            const result = await lambdaWarmer.warm(functionName, region);
-            const end = Date.now();
-            console.info({ region, functionName, resultCode: result?.$metadata.httpStatusCode, latency: `${end - start}ms` });
-            return result;
+        invocations.push(...functionInfos.map(async ({ functionName, region }, index) => {
+            try {
+                console.log(`Initiating request ${index} for ${functionName}`);
+                const start = Date.now();
+                const result = await lambdaWarmer.warm(functionName, region);
+                const end = Date.now();
+                console.info({ region, functionName, resultCode: result?.$metadata.httpStatusCode, latency: `${end - start}ms` });
+                return result;
+            } catch (e) {
+                console.error(`Error occurred during request ${index} for ${functionName}`, e);
+            }
         }));
     }
 
