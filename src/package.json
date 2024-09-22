@@ -17,7 +17,6 @@
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.656.0",
     "@aws-sdk/client-lambda": "^3.656.0",
-    "@aws-sdk/util-dynamodb": "^3.656.0",
     "esbuild": "^0.14.14",
     "reflect-metadata": "^0.1.13"
   },

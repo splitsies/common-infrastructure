@@ -1,6 +1,5 @@
 import { DynamoDBClient, QueryCommand, QueryCommandInput, QueryCommandOutput } from "@aws-sdk/client-dynamodb";
 import { FunctionInfo } from "../models/function-info";
-import { unmarshall } from "@aws-sdk/util-dynamodb";
 
 export class FunctionInfoDao {
     private readonly _client: DynamoDBClient;
@@ -23,7 +22,6 @@ export class FunctionInfoDao {
 
         do {
             const response = await this._client.send(new QueryCommand(queryInput));
-            unmarshall
             items.push(...this.unmarshallResults(response));
             queryInput.ExclusiveStartKey = response.LastEvaluatedKey;
         } while (queryInput.ExclusiveStartKey && Date.now() < timeout);
@@ -40,6 +38,6 @@ export class FunctionInfoDao {
 
     protected unmarshallResults(data: QueryCommandOutput): FunctionInfo[] {
         if (!data?.Items) return [];
-        return data.Items.map((i) => unmarshall(i) as FunctionInfo);
+        return data.Items.map((i) => new FunctionInfo(i.region.S, i.functionName.S));
     }
 }
