@@ -1,15 +1,14 @@
 export class ColdStartTracker {    
     // Leverages Singleton lifetime from inversify to determine
     // if this flag has been set by any operation
-    private _regionColdStartCache = new Map<string, boolean>();
+    private _regionLastWarmTime = new Map<string, number>();
 
-    isColdStart(region: string): boolean {
-        // If no entry exists, that means that we are in a cold start for that region.
-        return this._regionColdStartCache.get(region) ?? true;
+    timeSinceLastWarm(region: string): number {
+        return Date.now() - (this._regionLastWarmTime.get(region) ?? 0);
     }
 
-    setFlag(region: string): void {
-        this._regionColdStartCache.set(region, false);
+    setWarmTime(region: string): void {
+        this._regionLastWarmTime.set(region, Date.now());
     }
 }
 
