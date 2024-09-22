@@ -19,7 +19,7 @@ export const main = async (event: SNSEvent) => {
 
     const invocations: Promise<InvokeCommandOutput>[] = [];
     for (const messageRegion of regions) {
-        if (!coldStartTracker.isColdStart(messageRegion)) { continue; }
+        // if (!coldStartTracker.isColdStart(messageRegion)) { continue; }
         coldStartTracker.setFlag(messageRegion);
 
         // Hit health checks to ensure warm lambda execution environments
