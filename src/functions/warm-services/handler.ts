@@ -22,7 +22,6 @@ export const main = async (event: SNSEvent) => {
 
         // Hit health checks to ensure warm lambda execution environments
         const functionInfos = await dao.listFunctions(messageRegion);
-        await lambdaWarmer.warmInBatches(functionInfos);
-        
+        await lambdaWarmer.warmInBatches(functionInfos);  
     }
 }

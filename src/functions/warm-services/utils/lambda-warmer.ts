@@ -3,7 +3,8 @@ import regionConfiguration from "../configuration/regions.config.json";
 import { FunctionInfo } from "../models/function-info";
 
 export class LambdaWarmer {
-    private readonly BATCH_SIZE = 10;
+    private readonly BATCH_INTERVAL_MS = 150;
+    private readonly BATCH_SIZE = 9;
     private readonly _regions = new Map<string, LambdaClient>();
 
     constructor() {
@@ -13,9 +14,9 @@ export class LambdaWarmer {
     }  
 
     async warmInBatches(functionInfos: FunctionInfo[]): Promise<void> {
-        const invocations: Promise<InvokeCommandOutput>[] = [];
 
         for (let index = 0; index < functionInfos.length; index += this.BATCH_SIZE) {
+            const invocations: Promise<InvokeCommandOutput>[] = [];
             const batch = functionInfos.slice(index, index + this.BATCH_SIZE);
 
             invocations.push(...batch.map(async ({ functionName, region }, index) => {
@@ -32,6 +33,7 @@ export class LambdaWarmer {
             }));
             
             await Promise.all(invocations);
+            await new Promise<void>(res => setTimeout(() => res(), this.BATCH_INTERVAL_MS));
         }
     } 
 
