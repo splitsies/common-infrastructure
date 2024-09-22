@@ -9,6 +9,7 @@ const lambdaWarmer = new LambdaWarmer();
 const dao = new FunctionInfoDao();
 
 export const main = async (event: SNSEvent) => {
+    return;
     const regions = new Set<string>(event.Records.map(r => {
         try {
             return JSON.parse(r.Sns.Message).data || process.env.RtRegion
