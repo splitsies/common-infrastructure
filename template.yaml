@@ -26,6 +26,40 @@ Resources:
       TopicName: !Sub Splitsies-UserConnected-${Stage}
       DisplayName: !Sub Splitsies-UserConnected-${Stage}
 
+  UserAccountModifiedTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub Splitsies-UserAccountModified-${Stage}
+
+  UserAccountModifiedQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub Splitsies-UserAccountModifiedQueue-${Stage}
+
+  UserAccountModifiedQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties: 
+      Queues:
+        - !Ref UserAccountModifiedQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: "*"
+            Action: sqs:SendMessage
+            Resource: !GetAtt UserAccountModifiedQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref UserAccountModifiedTopic
+
+  # SNS Subscription to SQS Queue
+  UserAccountModifiedSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref UserAccountModifiedTopic
+      Protocol: sqs
+      Endpoint: !GetAtt UserAccountModifiedQueue.Arn
+
   WarmFunctionsIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
@@ -127,3 +161,12 @@ Outputs:
   WarmFunctionsIndexArn:
     Description: ARN of the WarmFunctionsIndex
     Value: !GetAtt WarmFunctionsIndex.Arn
+  UserAccountModifiedTopicArn:
+    Description: The ARN of the UserAccountModifiedTopic SNS topic
+    Value: !Ref UserAccountModifiedTopic
+  UserAccountModifiedQueueArn:
+    Description: The ARN of the UserAccountModifiedQueue SQS queue
+    Value: !GetAtt UserAccountModifiedQueue.Arn
+  UserAccountModifiedQueueUrl:
+    Description: The URL of the UserAccountModifiedQueue SQS queue
+    Value: !Ref UserAccountModifiedQueue
