@@ -26,39 +26,39 @@ Resources:
       TopicName: !Sub Splitsies-UserConnected-${Stage}
       DisplayName: !Sub Splitsies-UserConnected-${Stage}
 
-  UserAccountModifiedTopic:
+  GlobalMessageQueueTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub Splitsies-UserAccountModified-${Stage}
+      TopicName: !Sub Splitsies-GlobalMessageQueueTopic-${Stage}
 
-  UserAccountModifiedQueue:
+  GlobalMessageQueue:
     Type: AWS::SQS::Queue
     Properties:
-      QueueName: !Sub Splitsies-UserAccountModifiedQueue-${Stage}
+      QueueName: !Sub Splitsies-GlobalMessageQueue-${Stage}
 
-  UserAccountModifiedQueuePolicy:
+  GlobalMessageQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties: 
       Queues:
-        - !Ref UserAccountModifiedQueue
+        - !Ref GlobalMessageQueue
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal: "*"
             Action: sqs:SendMessage
-            Resource: !GetAtt UserAccountModifiedQueue.Arn
+            Resource: !GetAtt GlobalMessageQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Ref UserAccountModifiedTopic
+                aws:SourceArn: !Ref GlobalMessageQueueTopic
 
   # SNS Subscription to SQS Queue
-  UserAccountModifiedSubscription:
+  GlobalMessageQueueSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      TopicArn: !Ref UserAccountModifiedTopic
+      TopicArn: !Ref GlobalMessageQueueTopic
       Protocol: sqs
-      Endpoint: !GetAtt UserAccountModifiedQueue.Arn
+      Endpoint: !GetAtt GlobalMessageQueue.Arn
 
   WarmFunctionsIndex:
     Type: AWS::DynamoDB::Table
@@ -161,12 +161,12 @@ Outputs:
   WarmFunctionsIndexArn:
     Description: ARN of the WarmFunctionsIndex
     Value: !GetAtt WarmFunctionsIndex.Arn
-  UserAccountModifiedTopicArn:
-    Description: The ARN of the UserAccountModifiedTopic SNS topic
-    Value: !Ref UserAccountModifiedTopic
-  UserAccountModifiedQueueArn:
-    Description: The ARN of the UserAccountModifiedQueue SQS queue
-    Value: !GetAtt UserAccountModifiedQueue.Arn
-  UserAccountModifiedQueueUrl:
-    Description: The URL of the UserAccountModifiedQueue SQS queue
-    Value: !Ref UserAccountModifiedQueue
+  GlobalMessageQueueTopicArn:
+    Description: The ARN of the GlobalMessageQueueTopic SNS topic
+    Value: !Ref GlobalMessageQueueTopic
+  GlobalMessageQueueArn:
+    Description: The ARN of the GlobalMessageQueue SQS queue
+    Value: !GetAtt GlobalMessageQueue.Arn
+  GlobalMessageQueueUrl:
+    Description: The URL of the GlobalMessageQueue SQS queue
+    Value: !Ref GlobalMessageQueue
