@@ -67,12 +67,12 @@ Resources:
       AttributeDefinitions: 
         - AttributeName: region
           AttributeType: S
-        - AttributeName: functionName
-          AttributeType: S
+        - AttributeName: priority
+          AttributeType: N
       KeySchema: 
         - AttributeName: region
           KeyType: HASH
-        - AttributeName: functionName
+        - AttributeName: priority
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
