@@ -14,7 +14,7 @@ export class FunctionInfoDao {
         const timeout = Date.now() + timeoutMs;
         const items: FunctionInfo[] = [];
         const queryInput: QueryCommandInput = {
-            TableName: `Splitsies-FunctionWarmingIndex-${process.env.Stage}`,
+            TableName: `FunctionWarmingIndex`,
             KeyConditionExpression: "#region = :region",
             ExpressionAttributeNames: { "#region": "region" },
             ExpressionAttributeValues: { ":region": { S: region } },

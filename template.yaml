@@ -23,13 +23,13 @@ Resources:
   UserConnectedTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub Splitsies-UserConnected-${Stage}
-      DisplayName: !Sub Splitsies-UserConnected-${Stage}
+      TopicName: !Sub UserConnected
+      DisplayName: !Sub UserConnected
 
   FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
-      TableName: !Sub Splitsies-FunctionWarmingIndex-${Stage}
+      TableName: !Sub FunctionWarmingIndex
       AttributeDefinitions: 
         - AttributeName: region
           AttributeType: S
