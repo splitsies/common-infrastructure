@@ -9,7 +9,7 @@ Parameters:
 Globals:
   Function:
     Timeout: 30    
-    MemorySize: 1024
+    MemorySize: 2048
 
     LoggingConfig:
       LogFormat: JSON
@@ -26,19 +26,19 @@ Resources:
       TopicName: !Sub Splitsies-UserConnected-${Stage}
       DisplayName: !Sub Splitsies-UserConnected-${Stage}
 
-  WarmFunctionsIndex:
+  FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
-      TableName: !Sub Splitsies-WarmFunctionsIndex-${Stage}
+      TableName: !Sub Splitsies-FunctionWarmingIndex-${Stage}
       AttributeDefinitions: 
         - AttributeName: region
           AttributeType: S
-        - AttributeName: functionName
-          AttributeType: S
+        - AttributeName: priority
+          AttributeType: N
       KeySchema: 
         - AttributeName: region
           KeyType: HASH
-        - AttributeName: functionName
+        - AttributeName: priority
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
 
@@ -112,7 +112,7 @@ Resources:
                   - dynamodb:BatchGetItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: !GetAtt WarmFunctionsIndex.Arn
+                Resource: !GetAtt FunctionWarmingIndex.Arn
 
 Outputs:
   SNSTopicArn:
@@ -124,6 +124,6 @@ Outputs:
   WarmServicesLambdaExecutionRoleArn:
     Description: ARN of the WarmServicesLambdaExecutionRole
     Value: !GetAtt WarmServicesLambdaExecutionRole.Arn
-  WarmFunctionsIndexArn:
-    Description: ARN of the WarmFunctionsIndex
-    Value: !GetAtt WarmFunctionsIndex.Arn
+  FunctionWarmingIndexArn:
+    Description: ARN of the FunctionWarmingIndex
+    Value: !GetAtt FunctionWarmingIndex.Arn

@@ -3,8 +3,7 @@ import regionConfiguration from "../configuration/regions.config.json";
 import { FunctionInfo } from "../models/function-info";
 
 export class LambdaWarmer {
-    private readonly BATCH_INTERVAL_MS = 150;
-    private readonly BATCH_SIZE = 9;
+    private readonly BATCH_SIZE = 5;
     private readonly _regions = new Map<string, LambdaClient>();
 
     constructor() {
@@ -19,21 +18,26 @@ export class LambdaWarmer {
             const invocations: Promise<InvokeCommandOutput>[] = [];
             const batch = functionInfos.slice(index, index + this.BATCH_SIZE);
 
-            invocations.push(...batch.map(async ({ functionName, region }, index) => {
+            for (const { functionName, region, priority } of batch) {
                 try {
-                    console.log(`Initiating request ${index} for ${functionName}`);
+                    console.log(`Initiating request ${priority} for ${functionName}`);
                     const start = Date.now();
-                    const result = await this.warm(functionName, region);
-                    const end = Date.now();
-                    console.info({ region, functionName, resultCode: result?.$metadata.httpStatusCode, latency: `${end - start}ms` });
-                    return result;
+
+                    const result = this.warm(functionName, region).then((res) => {
+                        const end = Date.now();
+                        console.info({ region, functionName, resultCode: res?.$metadata.httpStatusCode, latency: `${end - start}ms` });
+                        return res;
+                    });
+                   
+                    invocations.push(result);
                 } catch (e) {
-                    console.error(`Error occurred during request ${index} for ${functionName}`, e);
+                    console.error(`Error occurred during request ${priority} for ${functionName}`, e);
                 }
-            }));
+
+                await new Promise<void>(res => setTimeout(() => res(), 50));
+            }
             
             await Promise.all(invocations);
-            await new Promise<void>(res => setTimeout(() => res(), this.BATCH_INTERVAL_MS));
         }
     } 
 
