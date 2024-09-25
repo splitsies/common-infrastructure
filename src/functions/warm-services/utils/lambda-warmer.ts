@@ -19,9 +19,9 @@ export class LambdaWarmer {
             const invocations: Promise<InvokeCommandOutput>[] = [];
             const batch = functionInfos.slice(index, index + this.BATCH_SIZE);
 
-            invocations.push(...batch.map(async ({ functionName, region }, index) => {
+            invocations.push(...batch.map(async ({ functionName, region, priority }, index) => {
                 try {
-                    console.log(`Initiating request ${index} for ${functionName}`);
+                    console.log(`Initiating request ${index} for ${functionName}, priority=${priority}`);
                     const start = Date.now();
                     const result = await this.warm(functionName, region);
                     const end = Date.now();

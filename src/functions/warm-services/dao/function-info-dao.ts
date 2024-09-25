@@ -38,6 +38,6 @@ export class FunctionInfoDao {
 
     protected unmarshallResults(data: QueryCommandOutput): FunctionInfo[] {
         if (!data?.Items) return [];
-        return data.Items.map((i) => new FunctionInfo(i.region.S, i.functionName.S));
+        return data.Items.map((i) => new FunctionInfo(i.region.S, parseInt(i.priority.N), i.functionName.S));
     }
 }

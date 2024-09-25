@@ -60,10 +60,10 @@ Resources:
       Protocol: sqs
       Endpoint: !GetAtt UserAccountModifiedQueue.Arn
 
-  WarmFunctionsIndex:
+  FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
-      TableName: !Sub Splitsies-WarmFunctionsIndex-${Stage}
+      TableName: !Sub Splitsies-FunctionWarmingIndex-${Stage}
       AttributeDefinitions: 
         - AttributeName: region
           AttributeType: S
@@ -146,7 +146,7 @@ Resources:
                   - dynamodb:BatchGetItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: !GetAtt WarmFunctionsIndex.Arn
+                Resource: !GetAtt FunctionWarmingIndex.Arn
 
 Outputs:
   SNSTopicArn:
@@ -158,9 +158,9 @@ Outputs:
   WarmServicesLambdaExecutionRoleArn:
     Description: ARN of the WarmServicesLambdaExecutionRole
     Value: !GetAtt WarmServicesLambdaExecutionRole.Arn
-  WarmFunctionsIndexArn:
-    Description: ARN of the WarmFunctionsIndex
-    Value: !GetAtt WarmFunctionsIndex.Arn
+  FunctionWarmingIndexArn:
+    Description: ARN of the FunctionWarmingIndex
+    Value: !GetAtt FunctionWarmingIndex.Arn
   UserAccountModifiedTopicArn:
     Description: The ARN of the UserAccountModifiedTopic SNS topic
     Value: !Ref UserAccountModifiedTopic
