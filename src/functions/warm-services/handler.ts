@@ -10,6 +10,7 @@ const dao = new FunctionInfoDao();
 export const main = async (event: SNSEvent) => {
     const regions = new Set<string>(event.Records.map(r => {
         try {
+            console.log({ message: r.Sns.Message });
             return JSON.parse(r.Sns.Message).data || process.env.RtRegion
         } catch {
             return process.env.RtRegion;
