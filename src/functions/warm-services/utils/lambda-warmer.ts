@@ -3,7 +3,6 @@ import regionConfiguration from "../configuration/regions.config.json";
 import { FunctionInfo } from "../models/function-info";
 
 export class LambdaWarmer {
-    private readonly BATCH_INTERVAL_MS = 100;
     private readonly BATCH_SIZE = 5;
     private readonly _regions = new Map<string, LambdaClient>();
 
@@ -35,11 +34,10 @@ export class LambdaWarmer {
                     console.error(`Error occurred during request ${priority} for ${functionName}`, e);
                 }
 
-                await new Promise<void>(res => setTimeout(() => res(), 15));
+                await new Promise<void>(res => setTimeout(() => res(), 50));
             }
             
             await Promise.all(invocations);
-            await new Promise<void>(res => setTimeout(() => res(), this.BATCH_INTERVAL_MS));
         }
     } 
 

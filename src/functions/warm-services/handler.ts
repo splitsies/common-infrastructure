@@ -23,7 +23,7 @@ export const main = async (event: SNSEvent) => {
     }));
     
     for (const messageRegion of regions) {
-        // if (coldStartTracker.timeSinceLastWarm(messageRegion) < 300000) { continue; }
+        // if (coldStartTracker.timeSinceLastWarm(messageRegion) < 500000) { continue; }
         coldStartTracker.setWarmTime(messageRegion);
 
         // Hit health checks to ensure warm lambda execution environments
