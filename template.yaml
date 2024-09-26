@@ -23,13 +23,31 @@ Resources:
   UserConnectedTopic:
     Type: AWS::SNS::Topic
     Properties:
-      TopicName: !Sub Splitsies-UserConnected-${Stage}
-      DisplayName: !Sub Splitsies-UserConnected-${Stage}
+      TopicName: !Sub UserConnected
+      DisplayName: !Sub UserConnected
+
+  MessageQueueTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MessageQueue
+      AttributeDefinitions:
+        - AttributeName: queueName
+          AttributeType: S
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: queueName
+          KeyType: HASH
+        - AttributeName: eventId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
 
   FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
-      TableName: !Sub Splitsies-FunctionWarmingIndex-${Stage}
+      TableName: !Sub FunctionWarmingIndex
       AttributeDefinitions: 
         - AttributeName: region
           AttributeType: S

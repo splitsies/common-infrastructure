@@ -1,4 +1,4 @@
-name: Deploy Dev PR
+name: Deploy Dev
 
 on:
   pull_request:
@@ -24,14 +24,14 @@ jobs:
     - uses: aws-actions/setup-sam@v2
     - uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY }}
+        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID_DEV }}
+        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY_DEV }}
         aws-region: us-east-1
 
     - run: sam build
     - run: |
-        sam deploy --stack-name  common-infrastructure-dev-pr \
+        sam deploy --stack-name  common-infrastructure \
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
-        --parameter-overrides "Stage=dev-pr"
+        --parameter-overrides "Stage=dev"
 
