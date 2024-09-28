@@ -1,8 +1,9 @@
 name: Deploy Staging
 
 on:
-  release:
-    types: [prereleased]
+  pull_request:
+    branches:
+      - "releases/**"
 
 jobs:
   deploy:
@@ -22,8 +23,8 @@ jobs:
     - uses: aws-actions/setup-sam@v2
     - uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY }}
+        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID_STAGING }}
+        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY_STAGING }}
         aws-region: us-east-1
 
     - run: sam build
