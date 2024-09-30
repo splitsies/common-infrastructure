@@ -5,6 +5,8 @@ Description: SAM Template for Common AWS Infrastructure
 Parameters:
   Stage:
     Type: String
+  StagingExpenseServiceLambdaExecutionRoleArn:
+    Type: String
 
 Globals:
   Function:
@@ -43,6 +45,19 @@ Resources:
       BillingMode: PAY_PER_REQUEST
       StreamSpecification:
         StreamViewType: NEW_IMAGE
+      ResourcePolicy:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: 
+                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-message
+                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-broadcast
+              Action:
+                - dynamodb:*
+              Resource: 
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MessageQueue
 
   FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
