@@ -1,9 +1,8 @@
 name: Deploy Production
 
 on:
-  pull_request:
-    branches:
-      - "releases/**"
+  release:
+    types: [released]
 
 jobs:
   deploy:
