@@ -8,6 +8,7 @@ jobs:
   deploy:
     name: deploy
     runs-on: ubuntu-latest
+    environment: production
     strategy:
       matrix:
         node-version: [18.x]
@@ -22,8 +23,8 @@ jobs:
     - uses: aws-actions/setup-sam@v2
     - uses: aws-actions/configure-aws-credentials@v1
       with:
-        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY }}
+        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY_PROD }}
         aws-region: us-east-1
 
     - run: sam build
@@ -31,5 +32,5 @@ jobs:
         sam deploy --stack-name  common-infrastructure-production \
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
-        --parameter-overrides "Stage=production"
+        --parameter-overrides "Stage=production" "StagingExpenseServiceLambdaExecutionRoleArn=${{ secrets.STAGING_EXPENSE_SERVICE_LAMBDA_EXECUTION_ROLE_ARN }}"
 
