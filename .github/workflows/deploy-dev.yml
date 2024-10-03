@@ -34,4 +34,9 @@ jobs:
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
         --parameter-overrides "Stage=dev" "StagingExpenseServiceLambdaExecutionRoleArn=${{ secrets.STAGING_EXPENSE_SERVICE_LAMBDA_EXECUTION_ROLE_ARN }}"
+    - run: |
+        sam deploy --stack-name  common-infrastructure --region us-west-1 \
+        --no-confirm-changeset \
+        --no-fail-on-empty-changeset \
+        --parameter-overrides "Stage=dev" "StagingExpenseServiceLambdaExecutionRoleArn=${{ secrets.STAGING_EXPENSE_SERVICE_LAMBDA_EXECUTION_ROLE_ARN }}"
 
