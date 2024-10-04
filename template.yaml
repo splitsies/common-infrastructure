@@ -160,3 +160,6 @@ Outputs:
   FunctionWarmingIndexArn:
     Description: ARN of the FunctionWarmingIndex
     Value: !GetAtt FunctionWarmingIndex.Arn
+  MessageQueueResourceArn:
+    Description: ARN of the Message Queue table
+    Value: !GetAtt MessageQueueTable.Arn
