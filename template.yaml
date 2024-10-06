@@ -5,7 +5,7 @@ Description: SAM Template for Common AWS Infrastructure
 Parameters:
   Stage:
     Type: String
-  StagingExpenseServiceLambdaExecutionRoleArn:
+  OrganizationId:
     Type: String
 
 Globals:
@@ -51,13 +51,14 @@ Resources:
           Statement:
             - Effect: Allow
               Principal:
-                AWS: 
-                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-message
-                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-broadcast
+                AWS: "*"
               Action:
                 - dynamodb:*
               Resource: 
                 - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MessageQueue
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
 
   FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
