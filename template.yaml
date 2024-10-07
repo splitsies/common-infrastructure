@@ -19,6 +19,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref Stage
+        DbRegion: us-east-1
         RtRegion: !Sub ${AWS::Region}
 
 Resources:
@@ -79,6 +80,7 @@ Resources:
   WarmServicesFunction:
     Type: AWS::Serverless::Function
     Properties: 
+      FunctionName: WarmServices
       CodeUri: ./src
       Handler: handler.main
       Runtime: nodejs18.x
