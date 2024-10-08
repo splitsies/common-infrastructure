@@ -76,6 +76,24 @@ Resources:
         - AttributeName: priority
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+      ResourcePolicy:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FunctionWarmingIndex
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
 
   WarmServicesFunction:
     Type: AWS::Serverless::Function
@@ -148,7 +166,7 @@ Resources:
                   - dynamodb:BatchGetItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: !GetAtt FunctionWarmingIndex.Arn
+                Resource: !Sub arn:aws:dynamodb:*:*:table/${FunctionWarmingIndex}
 
 Outputs:
   SNSTopicArn:
