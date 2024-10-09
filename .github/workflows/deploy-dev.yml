@@ -3,7 +3,6 @@ name: Deploy Dev
 on:
   pull_request:
     branches:
-      - main
       - "releases/**"
 
 jobs:
