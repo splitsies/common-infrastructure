@@ -43,8 +43,7 @@ export class LambdaWarmer {
 
     private warm(functionName: string, region: string): Promise<InvokeCommandOutput> {
         if (!this._regions.has(region)) {
-            console.error(`Region ${region} was not defined in configuration. Function=${functionName}`);
-            return Promise.resolve(undefined);
+            this._regions.set(region, new LambdaClient({ region }));
         }
     
         const command = new InvokeCommand({
@@ -58,5 +57,5 @@ export class LambdaWarmer {
         });
     
         return this._regions.get(region).send(command);
-    };   
+    }; 
 }

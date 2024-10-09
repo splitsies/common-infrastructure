@@ -5,7 +5,7 @@ Description: SAM Template for Common AWS Infrastructure
 Parameters:
   Stage:
     Type: String
-  StagingExpenseServiceLambdaExecutionRoleArn:
+  OrganizationId:
     Type: String
 
 Globals:
@@ -19,6 +19,7 @@ Globals:
     Environment:
       Variables:
         Stage: !Ref Stage
+        DbRegion: us-east-1
         RtRegion: !Sub ${AWS::Region}
 
 Resources:
@@ -51,13 +52,14 @@ Resources:
           Statement:
             - Effect: Allow
               Principal:
-                AWS: 
-                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-message
-                  - !Sub ${StagingExpenseServiceLambdaExecutionRoleArn}/expense-service-staging-broadcast
+                AWS: "*"
               Action:
                 - dynamodb:*
               Resource: 
                 - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MessageQueue
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
 
   FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
@@ -74,10 +76,29 @@ Resources:
         - AttributeName: priority
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
+      ResourcePolicy:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FunctionWarmingIndex
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
 
   WarmServicesFunction:
     Type: AWS::Serverless::Function
     Properties: 
+      FunctionName: WarmServices
       CodeUri: ./src
       Handler: handler.main
       Runtime: nodejs18.x
@@ -145,7 +166,7 @@ Resources:
                   - dynamodb:BatchGetItem
                   - dynamodb:Query
                   - dynamodb:Scan
-                Resource: !GetAtt FunctionWarmingIndex.Arn
+                Resource: !Sub arn:aws:dynamodb:*:*:table/${FunctionWarmingIndex}
 
 Outputs:
   SNSTopicArn:
@@ -160,3 +181,6 @@ Outputs:
   FunctionWarmingIndexArn:
     Description: ARN of the FunctionWarmingIndex
     Value: !GetAtt FunctionWarmingIndex.Arn
+  MessageQueueResourceArn:
+    Description: ARN of the Message Queue table
+    Value: !GetAtt MessageQueueTable.Arn

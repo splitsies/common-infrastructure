@@ -6,7 +6,7 @@ export class FunctionInfoDao {
 
     constructor() {
         this._client = new DynamoDBClient({
-            region: process.env.RtRegion
+            region: process.env.DbRegion
         });
     }
 

@@ -3,7 +3,6 @@ name: Deploy Dev
 on:
   pull_request:
     branches:
-      - main
       - "releases/**"
 
 jobs:
@@ -33,5 +32,10 @@ jobs:
         sam deploy --stack-name  common-infrastructure \
         --no-confirm-changeset \
         --no-fail-on-empty-changeset \
-        --parameter-overrides "Stage=dev" "StagingExpenseServiceLambdaExecutionRoleArn=${{ secrets.STAGING_EXPENSE_SERVICE_LAMBDA_EXECUTION_ROLE_ARN }}"
+        --parameter-overrides "Stage=dev" "OrganizationId=${{ secrets.AWS_ORGANIZATION_ID }}"
+    - run: |
+        sam deploy --stack-name  common-infrastructure --region us-west-1 \
+        --no-confirm-changeset \
+        --no-fail-on-empty-changeset \
+        --parameter-overrides "Stage=dev" "OrganizationId=${{ secrets.AWS_ORGANIZATION_ID }}"
 
