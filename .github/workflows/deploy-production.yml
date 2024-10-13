@@ -1,0 +1,43 @@
+name: Deploy Production
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      matrix:
+        node-version: [18.x]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - uses: actions/setup-python@v3
+    - uses: aws-actions/setup-sam@v2
+    - uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.SPLITSIES_DEPLOY_ACCESS_KEY_ID_PROD }}
+        aws-secret-access-key: ${{ secrets.SPLITSIES_DEPLOY_SECRET_KEY_PROD }}
+        aws-region: us-east-1
+
+    - run: sam build
+    - run: |
+        sam deploy --stack-name  common-infrastructure-production \
+        --no-confirm-changeset \
+        --no-fail-on-empty-changeset \
+        --parameter-overrides "Stage=production" "OrganizationId=${{ secrets.AWS_ORGANIZATION_ID }}"
+
+    - run: sam build
+    - run: |
+        sam deploy --stack-name  common-infrastructure-production --region us-west-1 \
+        --no-confirm-changeset \
+        --no-fail-on-empty-changeset \
+        --parameter-overrides "Stage=production" "OrganizationId=${{ secrets.AWS_ORGANIZATION_ID }}"
+

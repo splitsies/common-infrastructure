@@ -1,122 +1,186 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  expense-service-database
-
-  SAM Template for expense-service database
+Description: SAM Template for Common AWS Infrastructure
 
 Parameters:
-  RtEnv:
+  Stage:
+    Type: String
+  OrganizationId:
     Type: String
 
-Resources:  
-  ExpensePayer:
+Globals:
+  Function:
+    Timeout: 30    
+    MemorySize: 2048
+
+    LoggingConfig:
+      LogFormat: JSON
+
+    Environment:
+      Variables:
+        Stage: !Ref Stage
+        DbRegion: us-east-1
+        RtRegion: !Sub ${AWS::Region}
+
+Resources:
+  UserConnectedTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub UserConnected
+      DisplayName: !Sub UserConnected
+
+  MessageQueueTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MessageQueue
+      AttributeDefinitions:
+        - AttributeName: queueName
+          AttributeType: S
+        - AttributeName: eventId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: queueName
+          KeyType: HASH
+        - AttributeName: eventId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      StreamSpecification:
+        StreamViewType: NEW_IMAGE
+      ResourcePolicy:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                AWS: "*"
+              Action:
+                - dynamodb:*
+              Resource: 
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/MessageQueue
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
+
+  FunctionWarmingIndex:
     Type: AWS::DynamoDB::Table
     Properties: 
-      TableName: !Sub Splitsies-ExpensePayer-${RtEnv}
+      TableName: !Sub FunctionWarmingIndex
       AttributeDefinitions: 
-        - AttributeName: expenseId
+        - AttributeName: region
           AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
+        - AttributeName: priority
+          AttributeType: N
       KeySchema: 
-        - AttributeName: expenseId
+        - AttributeName: region
           KeyType: HASH
-        - AttributeName: userId
+        - AttributeName: priority
           KeyType: RANGE
       BillingMode: PAY_PER_REQUEST
-  ExpensePayerStatus:
-    Type: AWS::DynamoDB::Table
+      ResourcePolicy:
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal: "*"
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:PutItem
+                - dynamodb:UpdateItem
+                - dynamodb:DeleteItem
+                - dynamodb:Query
+                - dynamodb:Scan
+              Resource: 
+                - !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/FunctionWarmingIndex
+              Condition:
+                StringEquals:
+                  aws:PrincipalOrgID: !Sub ${OrganizationId}
+
+  WarmServicesFunction:
+    Type: AWS::Serverless::Function
     Properties: 
-      TableName: !Sub Splitsies-ExpensePayerStatus-${RtEnv}
-      AttributeDefinitions: 
-        - AttributeName: expenseId
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema: 
-        - AttributeName: expenseId
-          KeyType: HASH
-        - AttributeName: userId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-
-  SplitsiesLeadingExpenseTable:
-    Type: AWS::DynamoDB::Table
+      FunctionName: WarmServices
+      CodeUri: ./src
+      Handler: handler.main
+      Runtime: nodejs18.x
+      Architectures:
+      - x86_64
+      Role: !GetAtt WarmServicesLambdaExecutionRole.Arn
+      Events:
+        SNSTrigger:
+          Type: SNS
+          Properties:
+            Topic: !Ref UserConnectedTopic 
+    Metadata: # Manage esbuild properties
+      BuildMethod: esbuild
+      SourcesContent: true
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+        - functions/warm-services/handler.ts
+        External:
+        - node_modules
+        - aws-sdk
+        - .esbuild
+        - .github
+  
+  # IAM Role for Lambda to allow invocation by SNS
+  WarmServicesLambdaExecutionRole:
+    Type: AWS::IAM::Role
     Properties:
-      TableName: !Sub Splitsies-LeadingExpense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: userId
-          AttributeType: S
-        - AttributeName: transactionDateExpenseId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: userId
-          KeyType: HASH
-        - AttributeName: transactionDateExpenseId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: LambdaSNSInvokePolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # Permissions to create and manage logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+                              
+              # Permission for the Lambda function to invoke other Lambda functions
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: arn:aws:lambda:*:*:function:*
 
-  SplitsiesExpenseTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub Splitsies-Expense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: id
-          AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
+              # Allow Lambda to receive SNS messages
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref UserConnectedTopic
 
-  SplitsiesExpenseGroupTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub Splitsies-ExpenseGroup-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: parentExpenseId
-          AttributeType: S
-        - AttributeName: childExpenseId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: parentExpenseId
-          KeyType: HASH
-        - AttributeName: childExpenseId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-      GlobalSecondaryIndexes:
-        - IndexName: ChildExpenseIdIndex
-          KeySchema:
-            - AttributeName: childExpenseId
-              KeyType: HASH
-          Projection:
-            ProjectionType: ALL
+              # Permission for Lambda to read from DynamoDB table
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !Sub arn:aws:dynamodb:*:*:table/${FunctionWarmingIndex}
 
-  SplitsiesUserExpenseTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Sub Splitsies-UserExpense-${RtEnv}
-      AttributeDefinitions:
-        - AttributeName: expenseId
-          AttributeType: S
-        - AttributeName: userId
-          AttributeType: S
-      KeySchema:
-        - AttributeName: expenseId
-          KeyType: HASH
-        - AttributeName: userId
-          KeyType: RANGE
-      BillingMode: PAY_PER_REQUEST
-      TableClass: STANDARD
-      GlobalSecondaryIndexes:
-        - IndexName: UserIdIndex
-          KeySchema:
-            - AttributeName: userId
-              KeyType: HASH
-            - AttributeName: expenseId
-              KeyType: RANGE
-          Projection:
-            ProjectionType: ALL
+Outputs:
+  SNSTopicArn:
+    Description: ARN of the UserConnectedTopic
+    Value: !Ref UserConnectedTopic
+  LambdaFunctionArn:
+    Description: ARN of the WarmServicesFunction
+    Value: !GetAtt WarmServicesFunction.Arn
+  WarmServicesLambdaExecutionRoleArn:
+    Description: ARN of the WarmServicesLambdaExecutionRole
+    Value: !GetAtt WarmServicesLambdaExecutionRole.Arn
+  FunctionWarmingIndexArn:
+    Description: ARN of the FunctionWarmingIndex
+    Value: !GetAtt FunctionWarmingIndex.Arn
+  MessageQueueResourceArn:
+    Description: ARN of the Message Queue table
+    Value: !GetAtt MessageQueueTable.Arn
